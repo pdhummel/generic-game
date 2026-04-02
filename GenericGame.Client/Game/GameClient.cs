@@ -137,14 +137,17 @@ public class GameClient
     }
 
     /// <summary>
-    /// Joins the lobby
+    /// Creates a new game
     /// </summary>
-    public void JoinLobby(string playerName, bool isObserver = false)
+    public void CreateGame(string gameName, List<Guid> invitedPlayerIds, bool isAiEnabled, bool isFirstPlayerRandom)
     {
-        var message = new LobbyJoinMessage
+        var message = new CreateGameMessage
         {
-            PlayerName = playerName,
-            IsObserver = isObserver
+            GameName = gameName,
+            CreatorId = CurrentPlayer?.Id ?? Guid.Empty,
+            InvitedPlayerIds = invitedPlayerIds,
+            IsAiEnabled = isAiEnabled,
+            IsFirstPlayerRandom = isFirstPlayerRandom
         };
 
         var data = NetMessageSerializer.Serialize(message);
@@ -152,12 +155,45 @@ public class GameClient
     }
 
     /// <summary>
-    /// Leaves the lobby
+    /// Invites a player to join a game
     /// </summary>
-    public void LeaveLobby()
+    public void InvitePlayer(Guid gameId, Guid inviteeId)
     {
-        var message = new LobbyLeaveMessage
+        var message = new InvitePlayerMessage
         {
+            GameId = gameId,
+            InviterId = CurrentPlayer?.Id ?? Guid.Empty,
+            InviteeId = inviteeId
+        };
+
+        var data = NetMessageSerializer.Serialize(message);
+        _client.SendToAll(data, DeliveryMethod.ReliableOrdered);
+    }
+
+    /// <summary>
+    /// Joins a game
+    /// </summary>
+    public void JoinGame(Guid gameId, string playerName)
+    {
+        var message = new JoinGameMessage
+        {
+            GameId = gameId,
+            PlayerId = CurrentPlayer?.Id ?? Guid.Empty,
+            PlayerName = playerName
+        };
+
+        var data = NetMessageSerializer.Serialize(message);
+        _client.SendToAll(data, DeliveryMethod.ReliableOrdered);
+    }
+
+    /// <summary>
+    /// Leaves the current game
+    /// </summary>
+    public void LeaveGame(Guid gameId)
+    {
+        var message = new LeaveGameMessage
+        {
+            GameId = gameId,
             PlayerId = CurrentPlayer?.Id ?? Guid.Empty
         };
 
@@ -181,6 +217,64 @@ public class GameClient
     public event EventHandler<PlayerLeftEventArgs>? OnPlayerLeft;
     public event EventHandler<GameStartedEventArgs>? OnGameStarted;
     public event EventHandler<GameEndedEventArgs>? OnGameEnded;
+    public event EventHandler<LobbyUpdateEventArgs>? OnLobbyUpdate;
+    public event EventHandler<GamesListUpdateEventArgs>? OnGamesListUpdate;
+    public event EventHandler<GameInvitationReceivedEventArgs>? OnGameInvitationReceived;
+    public event EventHandler<PlayerInvitedEventArgs>? OnPlayerInvited;
+
+    #endregion
+
+    #region Event Raising Methods
+
+    protected virtual void OnGameStateUpdatedRaise(GameState gameState)
+    {
+        OnGameStateUpdated?.Invoke(this, new GameStateUpdatedEventArgs(gameState));
+    }
+
+    protected virtual void OnEventReceivedRaise(Event @event)
+    {
+        OnEventReceived?.Invoke(this, new EventReceivedEventArgs(@event));
+    }
+
+    protected virtual void OnPlayerJoinedRaise(Player player)
+    {
+        OnPlayerJoined?.Invoke(this, new PlayerJoinedEventArgs(player));
+    }
+
+    protected virtual void OnPlayerLeftRaise(Player player)
+    {
+        OnPlayerLeft?.Invoke(this, new PlayerLeftEventArgs(player));
+    }
+
+    protected virtual void OnGameStartedRaise(GameState gameState)
+    {
+        OnGameStarted?.Invoke(this, new GameStartedEventArgs(gameState));
+    }
+
+    protected virtual void OnGameEndedRaise(GameState gameState)
+    {
+        OnGameEnded?.Invoke(this, new GameEndedEventArgs(gameState));
+    }
+
+    protected virtual void OnLobbyUpdateRaise(List<Player> players, List<GameInfo> games)
+    {
+        OnLobbyUpdate?.Invoke(this, new LobbyUpdateEventArgs(players, games));
+    }
+
+    protected virtual void OnGamesListUpdateRaise(List<GameInfo> games)
+    {
+        OnGamesListUpdate?.Invoke(this, new GamesListUpdateEventArgs(games));
+    }
+
+    protected virtual void OnGameInvitationReceivedRaise(Guid gameId, string gameName, Guid inviterId, string inviterName)
+    {
+        OnGameInvitationReceived?.Invoke(this, new GameInvitationReceivedEventArgs(gameId, gameName, inviterId, inviterName));
+    }
+
+    protected virtual void OnPlayerInvitedRaise(Guid gameId, Guid inviteeId, string inviteeName)
+    {
+        OnPlayerInvited?.Invoke(this, new PlayerInvitedEventArgs(gameId, inviteeId, inviteeName));
+    }
 
     #endregion
 }
@@ -260,5 +354,69 @@ public class GameEndedEventArgs : EventArgs
     public GameEndedEventArgs(GameState gameState)
     {
         GameState = gameState;
+    }
+}
+
+/// <summary>
+/// Event arguments for lobby update event
+/// </summary>
+public class LobbyUpdateEventArgs : EventArgs
+{
+    public List<Player> Players { get; }
+    public List<GameInfo> Games { get; }
+
+    public LobbyUpdateEventArgs(List<Player> players, List<GameInfo> games)
+    {
+        Players = players;
+        Games = games;
+    }
+}
+
+/// <summary>
+/// Event arguments for games list update event
+/// </summary>
+public class GamesListUpdateEventArgs : EventArgs
+{
+    public List<GameInfo> Games { get; }
+
+    public GamesListUpdateEventArgs(List<GameInfo> games)
+    {
+        Games = games;
+    }
+}
+
+/// <summary>
+/// Event arguments for game invitation received event
+/// </summary>
+public class GameInvitationReceivedEventArgs : EventArgs
+{
+    public Guid GameId { get; }
+    public string GameName { get; }
+    public Guid InviterId { get; }
+    public string InviterName { get; }
+
+    public GameInvitationReceivedEventArgs(Guid gameId, string gameName, Guid inviterId, string inviterName)
+    {
+        GameId = gameId;
+        GameName = gameName;
+        InviterId = inviterId;
+        InviterName = inviterName;
+    }
+}
+
+/// <summary>
+/// Event arguments for player invited event
+/// </summary>
+public class PlayerInvitedEventArgs : EventArgs
+{
+    public Guid GameId { get; }
+    public Guid InviteeId { get; }
+    public string InviteeName { get; }
+
+    public PlayerInvitedEventArgs(Guid gameId, Guid inviteeId, string inviteeName)
+    {
+        GameId = gameId;
+        InviteeId = inviteeId;
+        InviteeName = inviteeName;
     }
 }

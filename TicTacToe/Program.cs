@@ -98,9 +98,9 @@ class Program
         // Connect to server
         client.Connect(address, port, playerName, isObserver);
 
-        // Show Tic-Tac-Toe UI
-        var game = new TicTacToeForm(client);
-        game.Run();
+        // Show lobby screen first
+        var lobby = new LobbyScreen(client);
+        lobby.Run();
 
         client.Disconnect();
     }
@@ -124,9 +124,9 @@ class Program
         var client = new GameClient();
         client.Connect("localhost", port, playerName, false);
 
-        // Show Tic-Tac-Toe UI
-        var game = new TicTacToeForm(client);
-        game.Run();
+        // Show lobby screen first
+        var lobby = new LobbyScreen(client);
+        lobby.Run();
 
         client.Disconnect();
     }

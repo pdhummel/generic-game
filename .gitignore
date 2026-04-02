@@ -1,0 +1,10 @@
+GenericGame.Server/obj
+GenericGame.Server/bin
+GenericGame.Client/obj
+GenericGame.Client/bin
+GenericGame.Shared/obj
+GenericGame.Shared/bin
+TicTacToe/obj
+TicTacToe/bin
+TestLiteNetLib/obj
+TestLiteNetLib/bin

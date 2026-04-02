@@ -9,23 +9,26 @@ using TicTacToe.Models;
 namespace TicTacToe.UI;
 
 /// <summary>
-/// Tic-Tac-Toe client UI using MonoGame
+/// Lobby screen that shows connected players and available games
 /// </summary>
-public class TicTacToeForm : Microsoft.Xna.Framework.Game
+public class LobbyScreen : Microsoft.Xna.Framework.Game
 {
     private readonly GameClient _client;
-    private TicTacToeGameState _gameState;
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch? _spriteBatch;
     private Texture2D? _whitePixel;
-    private bool _isMyTurn = false;
-    private bool _showLobby = true;
-    private TicTacToeLobbyState _lobbyState = new TicTacToeLobbyState();
+    private TicTacToeLobbyState _lobbyState;
+    private bool _isMyInvitation = false;
 
-    public TicTacToeForm(GameClient client)
+    // Font constants
+    private const float CharWidth = 8;
+    private const float CharHeight = 12;
+    private const float CharSpacing = 2;
+
+    public LobbyScreen(GameClient client)
     {
         _client = client;
-        _gameState = new TicTacToeGameState();
+        _lobbyState = new TicTacToeLobbyState();
 
         _graphics = new GraphicsDeviceManager(this)
         {
@@ -39,10 +42,11 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
 
     protected override void Initialize()
     {
+        // Register event handlers
         _client.OnGameStateUpdated += OnGameStateUpdated;
-        _client.OnGameStarted += OnGameStarted;
-        _client.OnGameEnded += OnGameEnded;
         _client.OnLobbyUpdate += OnLobbyUpdate;
+        _client.OnGamesListUpdate += OnGamesListUpdate;
+        _client.OnGameInvitationReceived += OnGameInvitationReceived;
 
         base.Initialize();
     }
@@ -51,7 +55,7 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        // Create a simple white pixel texture for drawing grid lines
+        // Create a simple white pixel texture for drawing
         _whitePixel = new Texture2D(GraphicsDevice, 1, 1);
         _whitePixel.SetData(new[] { Color.White });
 
@@ -68,34 +72,38 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
         base.UnloadContent();
     }
 
-    private void OnGameStateUpdated(object sender, GenericGame.Client.GameStateUpdatedEventArgs e)
+    private void OnGameStateUpdated(object sender, GameStateUpdatedEventArgs e)
     {
-        _gameState = (TicTacToeGameState)e.GameState;
-        UpdateBoard();
-    }
-
-    private void OnGameStarted(object sender, GenericGame.Client.GameStartedEventArgs e)
-    {
-        _gameState = (TicTacToeGameState)e.GameState;
-        _isMyTurn = IsMyTurn();
-        _showLobby = false;
-        UpdateBoard();
-    }
-
-    private void OnGameEnded(object sender, GenericGame.Client.GameEndedEventArgs e)
-    {
-        _gameState = (TicTacToeGameState)e.GameState;
-        _isMyTurn = false;
-        UpdateBoard();
+        // Handle game state updates
     }
 
     private void OnLobbyUpdate(object sender, LobbyUpdateEventArgs e)
     {
-        // Update lobby state
         _lobbyState.Players = e.Players;
         _lobbyState.Games = e.Games;
         _lobbyState.CurrentPlayerId = _client.CurrentPlayer?.Id ?? Guid.Empty;
-        _showLobby = true;
+    }
+
+    private void OnGamesListUpdate(object sender, GamesListUpdateEventArgs e)
+    {
+        _lobbyState.Games = e.Games;
+    }
+
+    private void OnGameInvitationReceived(object sender, GameInvitationReceivedEventArgs e)
+    {
+        // Check if this invitation is for me
+        if (_client.CurrentPlayer != null && e.InviterId != _client.CurrentPlayer.Id)
+        {
+            _isMyInvitation = true;
+            // Show invitation dialog
+            ShowInvitationDialog(e.GameId, e.GameName, e.InviterName);
+        }
+    }
+
+    private void ShowInvitationDialog(Guid gameId, string gameName, string inviterName)
+    {
+        // For now, just print to console
+        Console.WriteLine($"Invitation received: {inviterName} invited you to {gameName}");
     }
 
     // Button state tracking
@@ -111,7 +119,7 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
         {
             Exit();
         }
-        else if (keyboardState.IsKeyDown(Keys.C) && _showLobby)
+        else if (keyboardState.IsKeyDown(Keys.C))
         {
             // Create a new game
             var createGameScreen = new CreateGameScreen(_client);
@@ -143,60 +151,7 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
 
         _mouseLeftButtonPressed = mouseState.LeftButton == ButtonState.Pressed;
 
-        // Handle mouse clicks for board
-        if (mouseState.LeftButton == ButtonState.Pressed && _isMyTurn && _gameState.Status == GameStatus.Playing)
-        {
-            HandleMouseClick(mouseState);
-        }
-
         base.Update(gameTime);
-    }
-
-    private void HandleMouseClick(MouseState mouseState)
-    {
-        // Check if click is on the board
-        const int boardX = 50;
-        const int boardY = 100;
-        const int cellSize = 90;
-        const int spacing = 10;
-
-        if (mouseState.X >= boardX && mouseState.X < boardX + 3 * cellSize + 2 * spacing &&
-            mouseState.Y >= boardY && mouseState.Y < boardY + 3 * cellSize + 2 * spacing)
-        {
-            int col = (mouseState.X - boardX) / (cellSize + spacing);
-            int row = (mouseState.Y - boardY) / (cellSize + spacing);
-
-            if (col >= 0 && col < 3 && row >= 0 && row < 3)
-            {
-                // Check if cell is empty
-                if (_gameState.Board[row, col] == 0)
-                {
-                    // Send action to server
-                    var action = new TicTacToeAction
-                    {
-                        Row = row,
-                        Column = col
-                    };
-                    _client.SendAction(action);
-                }
-            }
-        }
-    }
-
-    private void UpdateBoard()
-    {
-        // Update status
-        switch (_gameState.Status)
-        {
-            case GameStatus.Lobby:
-                break;
-            case GameStatus.Playing:
-                var currentPlayer = _gameState.Players[_gameState.CurrentPlayerIndex];
-                _isMyTurn = IsMyTurn();
-                break;
-            case GameStatus.Finished:
-                break;
-        }
     }
 
     protected override void Draw(GameTime gameTime)
@@ -205,31 +160,12 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
 
         _spriteBatch?.Begin();
 
-        if (_showLobby)
-        {
-            DrawLobby();
-        }
-        else
-        {
-            DrawGame();
-        }
-
-        _spriteBatch.End();
-
-        base.Draw(gameTime);
-    }
-
-    private void DrawLobby()
-    {
-        var yPos = 50f;
-
         // Draw title
-        DrawText("Tic-Tac-Toe Lobby", 50, yPos, Color.White, 24);
-        yPos += 40;
+        DrawText("Tic-Tac-Toe Lobby", 50, 50, Color.White, 24);
 
         // Draw players section
-        DrawText("Connected Players:", 50, yPos, Color.LightGray, 16);
-        yPos += 30;
+        DrawText("Connected Players:", 50, 100, Color.LightGray, 16);
+        var yPos = 130f;
         foreach (var player in _lobbyState.Players)
         {
             var isMe = player.Id == _lobbyState.CurrentPlayerId ? " (You)" : "";
@@ -282,78 +218,19 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
 
         // Draw button text
         DrawText("Create New Game", buttonX + buttonWidth / 2 - 60, buttonY + 10, Color.White, 18);
-    }
 
-    private void DrawGame()
-    {
-        // Draw status
-        var yPos = 50f;
-        switch (_gameState.Status)
-        {
-            case GameStatus.Lobby:
-                DrawText("Waiting for players...", 50, yPos, Color.White, 16);
-                break;
-            case GameStatus.Playing:
-                var currentPlayer = _gameState.Players[_gameState.CurrentPlayerIndex];
-                DrawText($"Turn: {currentPlayer.Name}", 50, yPos, Color.White, 16);
-                if (_isMyTurn)
-                {
-                    DrawText("Your turn!", 50, yPos + 30, Color.Yellow, 16);
-                }
-                break;
-            case GameStatus.Finished:
-                if (_gameState.Winner == 0)
-                    DrawText("Game Over - Draw!", 50, yPos, Color.White, 16);
-                else if (_gameState.Winner == 1)
-                    DrawText("Game Over - X Wins!", 50, yPos, Color.White, 16);
-                else
-                    DrawText("Game Over - O Wins!", 50, yPos, Color.White, 16);
-                break;
-        }
+        _spriteBatch.End();
 
-        // Draw board
-        const int boardX = 50;
-        const int boardY = 150;
-        const int cellSize = 90;
-        const int spacing = 10;
-
-        // Draw grid lines
-        for (int i = 0; i <= 3; i++)
-        {
-            // Vertical lines
-            _spriteBatch.Draw(_whitePixel!, new Rectangle(boardX + i * (cellSize + spacing), boardY, 2, 3 * cellSize + 2 * spacing), Color.White);
-            // Horizontal lines
-            _spriteBatch.Draw(_whitePixel!, new Rectangle(boardX, boardY + i * (cellSize + spacing), 3 * cellSize + 2 * spacing, 2), Color.White);
-        }
-
-        // Draw X and O
-        for (int row = 0; row < 3; row++)
-        {
-            for (int col = 0; col < 3; col++)
-            {
-                var mark = _gameState.Board[row, col];
-                if (mark != 0)
-                {
-                    var x = boardX + col * (cellSize + spacing) + cellSize / 2;
-                    var y = boardY + row * (cellSize + spacing) + cellSize / 2;
-                    var text = mark == 1 ? "X" : "O";
-                    DrawText(text, x - 5, y - 7, Color.White, 16); // Center the text approximately
-                }
-            }
-        }
+        base.Draw(gameTime);
     }
 
     private void DrawText(string text, float x, float y, Color color, float fontSize)
     {
         // Simple text drawing using white pixel texture
-        const float charWidth = 8;
-        const float charHeight = 12;
-        const float spacing = 2;
-
         foreach (char c in text)
         {
             DrawCharacter(c, x, y, color, fontSize);
-            x += (charWidth + spacing) * (fontSize / 12);
+            x += (CharWidth + CharSpacing) * (fontSize / 12);
         }
     }
 
@@ -362,12 +239,8 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
         // Simple 5x7 pixel font representation
         byte[] pattern = GetCharacterPattern(c);
 
-        const float charWidth = 8;
-        const float charHeight = 12;
-        const float spacing = 2;
-
-        float width = (charWidth + spacing) * (fontSize / 12);
-        float height = charHeight * (fontSize / 12);
+        float width = (CharWidth + CharSpacing) * (fontSize / 12);
+        float height = CharHeight * (fontSize / 12);
 
         for (int row = 0; row < 7; row++)
         {
@@ -375,7 +248,7 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
             {
                 if ((pattern[row] & (1 << (4 - col))) != 0)
                 {
-                    _spriteBatch.Draw(_whitePixel!, new Rectangle((int)x + (int)(col * width / 5), (int)y + (int)(row * height / 7), (int)width / 5, (int)height / 7), color);
+                    _spriteBatch?.Draw(_whitePixel!, new Rectangle((int)x + (int)(col * width / 5), (int)y + (int)(row * height / 7), (int)width / 5, (int)height / 7), color);
                 }
             }
         }
@@ -384,7 +257,6 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
     private byte[] GetCharacterPattern(char c)
     {
         // Simple 5x7 pixel font patterns
-        // Each byte represents a row (bits 0-4 are the character pixels)
         return c switch
         {
             ' ' => new byte[] { 0, 0, 0, 0, 0, 0, 0 },
@@ -484,12 +356,5 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
             '~' => new byte[] { 6, 9, 0, 0, 0, 0, 0 },
             _ => new byte[] { 0, 0, 0, 0, 0, 0, 0 }
         };
-    }
-
-    private bool IsMyTurn()
-    {
-        // Check if current player is me
-        if (_client.CurrentPlayer == null) return false;
-        return _gameState.Players[_gameState.CurrentPlayerIndex].Id == _client.CurrentPlayer.Id;
     }
 }

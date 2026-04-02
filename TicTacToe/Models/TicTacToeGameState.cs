@@ -18,6 +18,16 @@ public class TicTacToeGameState : GameState
     public int Winner { get; set; } = 0;
 
     /// <summary>
+    /// Whether AI opponent is enabled
+    /// </summary>
+    public bool IsAiEnabled { get; set; }
+
+    /// <summary>
+    /// Whether first player is randomly chosen
+    /// </summary>
+    public bool IsFirstPlayerRandom { get; set; }
+
+    /// <summary>
     /// Creates a deep copy of this game state
     /// </summary>
     public override GameState Clone()
@@ -25,6 +35,8 @@ public class TicTacToeGameState : GameState
         var clone = (TicTacToeGameState)base.Clone();
         Array.Copy(Board, clone.Board, 9);
         clone.Winner = Winner;
+        clone.IsAiEnabled = IsAiEnabled;
+        clone.IsFirstPlayerRandom = IsFirstPlayerRandom;
         return clone;
     }
 }

@@ -127,3 +127,115 @@ public class GameEvent : GenericGame.Shared.Models.Event
         return new GameEvent();
     }
 }
+
+/// <summary>
+/// Message sent when a player creates a new game
+/// </summary>
+public class CreateGameMessage
+{
+    public string GameName { get; set; } = string.Empty;
+    public Guid CreatorId { get; set; }
+    public List<Guid> InvitedPlayerIds { get; set; } = new List<Guid>();
+    public bool IsAiEnabled { get; set; }
+    public bool IsFirstPlayerRandom { get; set; }
+}
+
+/// <summary>
+/// Message sent when a player invites another player to join a game
+/// </summary>
+public class InvitePlayerMessage
+{
+    public Guid GameId { get; set; }
+    public Guid InviterId { get; set; }
+    public Guid InviteeId { get; set; }
+}
+
+/// <summary>
+/// Message sent when a player accepts an invitation and joins a game
+/// </summary>
+public class JoinGameMessage
+{
+    public Guid GameId { get; set; }
+    public Guid PlayerId { get; set; }
+    public string PlayerName { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Message sent when a player leaves a game
+/// </summary>
+public class LeaveGameMessage
+{
+    public Guid GameId { get; set; }
+    public Guid PlayerId { get; set; }
+}
+
+/// <summary>
+/// Message containing the list of available games
+/// </summary>
+public class GamesListMessage
+{
+    public List<GameInfo> Games { get; set; } = new List<GameInfo>();
+}
+
+/// <summary>
+/// Information about a game
+/// </summary>
+public class GameInfo
+{
+    public Guid GameId { get; set; }
+    public string GameName { get; set; } = string.Empty;
+    public Guid CreatorId { get; set; }
+    public string CreatorName { get; set; } = string.Empty;
+    public int PlayerCount { get; set; }
+    public int MaxPlayers { get; set; }
+    public bool IsAiEnabled { get; set; }
+    public bool IsStarted { get; set; }
+}
+
+/// <summary>
+/// Message sent when a player is invited to join a game
+/// </summary>
+public class GameInvitationMessage
+{
+    public Guid GameId { get; set; }
+    public string GameName { get; set; } = string.Empty;
+    public Guid InviterId { get; set; }
+    public string InviterName { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Message sent when a player accepts an invitation
+/// </summary>
+public class InvitationAcceptedMessage
+{
+    public Guid GameId { get; set; }
+    public Guid PlayerId { get; set; }
+    public string PlayerName { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Message sent when a game is ready to start
+/// </summary>
+public class GameReadyToStartMessage
+{
+    public Guid GameId { get; set; }
+    public GameState GameState { get; set; } = new GameState();
+}
+
+/// <summary>
+/// Message containing the list of connected players
+/// </summary>
+public class PlayersListMessage
+{
+    public List<Player> Players { get; set; } = new List<Player>();
+}
+
+/// <summary>
+/// Response message for create game
+/// </summary>
+public class CreateGameResponseMessage
+{
+    public bool Success { get; set; }
+    public Guid GameId { get; set; }
+    public GameState GameState { get; set; } = new GameState();
+}

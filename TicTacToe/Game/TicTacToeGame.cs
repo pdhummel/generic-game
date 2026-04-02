@@ -1,6 +1,7 @@
 using GenericGame.Server;
 using GenericGame.Shared.Models;
 using TicTacToe.Models;
+using TicTacToe.AI;
 
 namespace TicTacToe.Game;
 
@@ -9,16 +10,45 @@ namespace TicTacToe.Game;
 /// </summary>
 public class TicTacToeGame : GameInstance
 {
+    private readonly TicTacToeAI _ai = new();
+
     /// <summary>
     /// Creates a new Tic-Tac-Toe game instance
     /// </summary>
     /// <param name="name">Name of the game</param>
     /// <param name="creatorId">ID of the player who created this game</param>
-    public TicTacToeGame(string name, Guid creatorId) : base(name, creatorId)
+    /// <param name="isAiEnabled">Whether AI opponent is enabled</param>
+    /// <param name="isFirstPlayerRandom">Whether first player is randomly chosen</param>
+    public TicTacToeGame(string name, Guid creatorId, bool isAiEnabled = false, bool isFirstPlayerRandom = true) : base(name, creatorId)
     {
         State = new TicTacToeGameState();
         State.GameId = GameId;
         State.Status = GameStatus.Lobby;
+        State.IsAiEnabled = isAiEnabled;
+        State.IsFirstPlayerRandom = isFirstPlayerRandom;
+
+        // Add creator as player 1
+        var creator = new Player
+        {
+            Id = creatorId,
+            Name = "Player 1",
+            IsObserver = false,
+            IsConnected = true
+        };
+        AddPlayer(creator);
+
+        // If AI is enabled, add AI as player 2
+        if (isAiEnabled)
+        {
+            var aiPlayer = new Player
+            {
+                Id = Guid.NewGuid(),
+                Name = "AI Opponent",
+                IsObserver = false,
+                IsConnected = true
+            };
+            AddPlayer(aiPlayer);
+        }
     }
 
     /// <summary>
@@ -167,7 +197,17 @@ public class TicTacToeGame : GameInstance
         {
             State.Status = GameStatus.Playing;
             State.TurnNumber = 1;
-            State.CurrentPlayerIndex = 0;
+
+            // Determine first player
+            if (State.IsFirstPlayerRandom)
+            {
+                State.CurrentPlayerIndex = new Random().Next(0, 2);
+            }
+            else
+            {
+                State.CurrentPlayerIndex = 0; // Player 1 starts
+            }
+
             OnGameStartedRaise(State.Clone());
         }
     }
@@ -182,5 +222,37 @@ public class TicTacToeGame : GameInstance
             State.Status = GameStatus.Finished;
             OnGameEndedRaise(State.Clone());
         }
+    }
+
+    /// <summary>
+    /// Adds a player to the game
+    /// </summary>
+    public new bool AddPlayer(Player player)
+    {
+        return base.AddPlayer(player);
+    }
+
+    /// <summary>
+    /// Gets the number of human players (excluding AI)
+    /// </summary>
+    public int GetHumanPlayerCount()
+    {
+        return State.Players.Count(p => !p.IsObserver && p.Name != "AI Opponent");
+    }
+
+    /// <summary>
+    /// Gets the number of players needed to start the game
+    /// </summary>
+    public int GetPlayersNeeded()
+    {
+        return 2; // Tic-Tac-Toe needs 2 players
+    }
+
+    /// <summary>
+    /// Checks if the game is ready to start
+    /// </summary>
+    public bool IsReadyToStart()
+    {
+        return GetHumanPlayerCount() + (State.IsAiEnabled ? 1 : 0) >= GetPlayersNeeded();
     }
 }
