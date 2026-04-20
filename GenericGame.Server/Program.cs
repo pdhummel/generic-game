@@ -1,3 +1,4 @@
+using GenericGame;
 using GenericGame.Server;
 
 class Program
@@ -13,11 +14,11 @@ class Program
             {
                 if (int.TryParse(args[++i], out port))
                 {
-                    Console.WriteLine($"Server port: {port}");
+                    Log.Write($"Server port: {port}");
                 }
                 else
                 {
-                    Console.WriteLine("Invalid port number. Using default: 14000");
+                    Log.Write("Invalid port number. Using default: 14000");
                 }
             }
             else if (args[i] == "-h" || args[i] == "--help")
@@ -30,8 +31,8 @@ class Program
         var server = new GameServer(port);
 
         // Handle console input for commands
-        Console.WriteLine("Server running. Type 'help' for commands.");
-        Console.WriteLine("Commands: list, start <gameid>, stop, exit");
+        Log.Write("Server running. Type 'help' for commands.");
+        Log.Write("Commands: list, start <gameid>, stop, exit");
 
         while (true)
         {
@@ -49,10 +50,10 @@ class Program
                     break;
                 case "list":
                     var games = server.GetGames();
-                    Console.WriteLine($"Active games: {games.Count}");
+                    Log.Write($"Active games: {games.Count}");
                     foreach (var game in games)
                     {
-                        Console.WriteLine($"  - {game.Name} (ID: {game.GameId}, Players: {game.State.Players.Count})");
+                        Log.Write($"  - {game.Name} (ID: {game.GameId}, Players: {game.State.Players.Count})");
                     }
                     break;
                 case "start":
@@ -62,16 +63,16 @@ class Program
                         if (game != null)
                         {
                             game.StartGame();
-                            Console.WriteLine($"Game {gameId} started");
+                            Log.Write($"Game {gameId} started");
                         }
                         else
                         {
-                            Console.WriteLine($"Game {gameId} not found");
+                            Log.Write($"Game {gameId} not found");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("Usage: start <gameid>");
+                        Log.Write("Usage: start <gameid>");
                     }
                     break;
                 case "stop":
@@ -81,7 +82,7 @@ class Program
                 case "quit":
                     return;
                 default:
-                    Console.WriteLine($"Unknown command: {command}");
+                    Log.Write($"Unknown command: {command}");
                     break;
             }
         }
@@ -89,18 +90,18 @@ class Program
 
     static void PrintHelp()
     {
-        Console.WriteLine("Generic Game Server");
-        Console.WriteLine("Usage: GenericGame.Server [options]");
-        Console.WriteLine();
-        Console.WriteLine("Options:");
-        Console.WriteLine("  -p, --port <port>     Port to listen on (default: 14000)");
-        Console.WriteLine("  -h, --help            Show this help message");
-        Console.WriteLine();
-        Console.WriteLine("Commands (during runtime):");
-        Console.WriteLine("  help, ?               Show this help message");
-        Console.WriteLine("  list                  List active games");
-        Console.WriteLine("  start <gameid>        Start a game");
-        Console.WriteLine("  stop                  Stop the server");
-        Console.WriteLine("  exit, quit            Exit the server");
+        Log.Write("Generic Game Server");
+        Log.Write("Usage: GenericGame.Server [options]");
+        Log.Write("");
+        Log.Write("Options:");
+        Log.Write("  -p, --port <port>     Port to listen on (default: 14000)");
+        Log.Write("  -h, --help            Show this help message");
+        Log.Write("");
+        Log.Write("Commands (during runtime):");
+        Log.Write("  help, ?               Show this help message");
+        Log.Write("  list                  List active games");
+        Log.Write("  start <gameid>        Start a game");
+        Log.Write("  stop                  Stop the server");
+        Log.Write("  exit, quit            Exit the server");
     }
 }

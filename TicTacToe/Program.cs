@@ -1,3 +1,4 @@
+using GenericGame;
 using GenericGame.Client;
 using GenericGame.Server;
 using TicTacToe.AI;
@@ -38,11 +39,11 @@ class Program
             {
                 if (int.TryParse(args[++i], out serverPort))
                 {
-                    Console.WriteLine($"Server port: {serverPort}");
+                    Log.Write($"Server port: {serverPort}");
                 }
                 else
                 {
-                    Console.WriteLine("Invalid port number. Using default: 14000");
+                    Log.Write("Invalid port number. Using default: 14000");
                 }
             }
             else if (args[i] == "-n" || args[i] == "--name" && i + 1 < args.Length)
@@ -77,7 +78,7 @@ class Program
                 RunServerAndClient(serverPort, playerName);
                 break;
             default:
-                Console.WriteLine($"Unknown mode: {mode}");
+                Log.Write($"Unknown mode: {mode}");
                 PrintHelp();
                 break;
         }
@@ -85,14 +86,14 @@ class Program
 
     static void RunServerOnly(int port)
     {
-        Console.WriteLine("Starting server in stand-alone mode...");
+        Log.Write("Starting server in stand-alone mode...");
         var server = new GameServer(port);
         server.Run();
     }
 
     static void RunClientOnly(string address, int port, string playerName, bool isObserver)
     {
-        Console.WriteLine($"Starting client in stand-alone mode...");
+        Log.Write($"Starting client in stand-alone mode...");
         var client = new GameClient();
         var lobby = new LobbyScreen(client);
 
@@ -114,7 +115,7 @@ class Program
 
     static void RunServerAndClient(int port, string playerName)
     {
-        Console.WriteLine("Starting server and client...");
+        Log.Write("Starting server and client...");
 
         // Start server in a background thread
         var server = new GameServer(port);
@@ -149,20 +150,20 @@ class Program
 
     static void PrintHelp()
     {
-        Console.WriteLine("Tic-Tac-Toe Game");
-        Console.WriteLine("Usage: TicTacToe [options]");
-        Console.WriteLine();
-        Console.WriteLine("Options:");
-        Console.WriteLine("  -m, --mode <mode>     Run mode: server, client, or both (default: client)");
-        Console.WriteLine("  -h, --host <address>  Server IP address or hostname (default: localhost)");
-        Console.WriteLine("  -p, --port <port>     Server port (default: 14000)");
-        Console.WriteLine("  -n, --name <name>     Player name (default: Player)");
-        Console.WriteLine("  -o, --observer        Connect as observer (spectator)");
-        Console.WriteLine("  -h, --help            Show this help message");
-        Console.WriteLine();
-        Console.WriteLine("Modes:");
-        Console.WriteLine("  server    Run only the game server");
-        Console.WriteLine("  client    Connect to a remote server as a client");
-        Console.WriteLine("  both      Run both server and client on the same machine");
+        Log.Write("Tic-Tac-Toe Game");
+        Log.Write("Usage: TicTacToe [options]");
+        Log.Write("");
+        Log.Write("Options:");
+        Log.Write("  -m, --mode <mode>     Run mode: server, client, or both (default: client)");
+        Log.Write("  -h, --host <address>  Server IP address or hostname (default: localhost)");
+        Log.Write("  -p, --port <port>     Server port (default: 14000)");
+        Log.Write("  -n, --name <name>     Player name (default: Player)");
+        Log.Write("  -o, --observer        Connect as observer (spectator)");
+        Log.Write("  -h, --help            Show this help message");
+        Log.Write("");
+        Log.Write("Modes:");
+        Log.Write("  server    Run only the game server");
+        Log.Write("  client    Connect to a remote server as a client");
+        Log.Write("  both      Run both server and client on the same machine");
     }
 }

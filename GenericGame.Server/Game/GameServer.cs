@@ -1,4 +1,5 @@
 using LiteNetLib;
+using GenericGame;
 using GenericGame.Shared.Models;
 using GenericGame.Server;
 using GenericGame.Shared.Networking;
@@ -67,7 +68,7 @@ public class ServerNetEventListener : INetEventListener
         try
         {
             var data = reader.GetRemainingBytes();
-            Console.WriteLine($"OnNetworkReceive: Received {data.Length} bytes from peer {peer.Id}");
+            Log.Write($"OnNetworkReceive: Received {data.Length} bytes from peer {peer.Id}");
             _server.HandleMessage(peer.Id, data);
         }
         finally
@@ -128,7 +129,7 @@ public class GameServer
         _listener = new ServerNetEventListener(this);
         _server = new NetManager(_listener);
         _server.Start(port);
-        Console.WriteLine($"Server started on port {port}");
+        Log.Write($"Server started on port {port}");
     }
 
     /// <summary>
@@ -405,7 +406,7 @@ public class GameServer
     /// </summary>
     public void HandleMessage(long connectionId, byte[] data)
     {
-        Console.WriteLine("HandleMessage(): enter");
+        Log.Write("HandleMessage(): enter");
         try
         {
             var message = NetMessageSerializer.Deserialize<Dictionary<string, object>>(data);
@@ -446,7 +447,7 @@ public class GameServer
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error handling message: {ex.Message}");
+            Log.Write($"Error handling message: {ex.Message}");
         }
     }
 
@@ -600,7 +601,7 @@ public class GameServer
             {
                 conn.PlayerId = Guid.NewGuid(); // Assign a new player ID if not already assigned
             }
-            Console.WriteLine($"HandleLobbyJoin: Player joined - {conn.PlayerName} (ID: {conn.PlayerId})");
+            Log.Write($"HandleLobbyJoin: Player joined - {conn.PlayerName} (ID: {conn.PlayerId})");
         }
 
         // Broadcast updated connected clients list
@@ -611,7 +612,7 @@ public class GameServer
         // Broadcast updated players list
         var playersListMessage = new PlayersListMessage { Players = GetConnectedPlayers() };
         var playersListData = NetMessageSerializer.Serialize(playersListMessage);
-        Console.WriteLine($"HandleLobbyJoin: Broadcasting players list with {playersListMessage.Players.Count} players");
+        Log.Write($"HandleLobbyJoin: Broadcasting players list with {playersListMessage.Players.Count} players");
         Broadcast(playersListData);
         
         // Broadcast updated games list

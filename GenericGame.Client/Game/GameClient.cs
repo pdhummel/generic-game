@@ -1,4 +1,5 @@
 using LiteNetLib;
+using GenericGame;
 using GenericGame.Shared.Models;
 using GenericGame.Client;
 using GenericGame.Shared.Networking;
@@ -41,7 +42,7 @@ public class ClientNetEventListener : INetEventListener
         try
         {
             var data = reader.GetRemainingBytes();
-            Console.WriteLine($"OnNetworkReceive: Received {data.Length} bytes from peer {peer.Id}");
+            Log.Write($"OnNetworkReceive: Received {data.Length} bytes from peer {peer.Id}");
             _client.HandleIncomingMessage(data);
         }
         finally
@@ -133,7 +134,7 @@ public class GameClient
         _client.Start();
         _client.Connect(address, port, string.Empty);
 
-        Console.WriteLine($"Connecting to {address}:{port} as {playerName}...");
+        Log.Write($"Connecting to {address}:{port} as {playerName}...");
     }
 
     /// <summary>
@@ -156,7 +157,7 @@ public class GameClient
                     JsonElement elem => elem.GetByte(),
                     _ => Convert.ToByte(typeObj.ToString())
                 };
-                Console.WriteLine($"HandleIncomingMessage: Received message type {messageType}");
+                Log.Write($"HandleIncomingMessage: Received message type {messageType}");
 
                 switch (messageType)
                 {
@@ -201,7 +202,7 @@ public class GameClient
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error handling message: {ex.Message}");
+            Log.Write($"Error handling message: {ex.Message}");
         }
     }
 
@@ -210,7 +211,7 @@ public class GameClient
     /// </summary>
     private void HandleServerWelcome(Dictionary<string, object> message)
     {
-        Console.WriteLine("HandleServerWelcome: Received welcome message from server");
+        Log.Write("HandleServerWelcome: Received welcome message from server");
         // Try camelCase first, then PascalCase
         if (message.TryGetValue("playerId", out var playerIdObj) && playerIdObj != null)
         {
@@ -222,7 +223,7 @@ public class GameClient
                 IsObserver = _isObserver,
                 IsConnected = true
             };
-            Console.WriteLine($"HandleServerWelcome: Player ID assigned: {_playerId}");
+            Log.Write($"HandleServerWelcome: Player ID assigned: {_playerId}");
         }
         else if (message.TryGetValue("PlayerId", out playerIdObj) && playerIdObj != null)
         {
@@ -234,11 +235,11 @@ public class GameClient
                 IsObserver = _isObserver,
                 IsConnected = true
             };
-            Console.WriteLine($"HandleServerWelcome: Player ID assigned: {_playerId}");
+            Log.Write($"HandleServerWelcome: Player ID assigned: {_playerId}");
         }
 
         // Send lobby join message to register in the lobby
-        Console.WriteLine("HandleServerWelcome: Sending lobby join message");
+        Log.Write("HandleServerWelcome: Sending lobby join message");
         SendLobbyJoin();
     }
 
@@ -247,7 +248,7 @@ public class GameClient
     /// </summary>
     private void SendLobbyJoin()
     {
-        Console.WriteLine($"SendLobbyJoin: Sending lobby join for player '{_playerName}'");
+        Log.Write($"SendLobbyJoin: Sending lobby join for player '{_playerName}'");
         var message = new LobbyJoinMessage
         {
             PlayerName = _playerName,
@@ -257,7 +258,7 @@ public class GameClient
         var data = NetMessageSerializer.Serialize(message);
         // Send to all peers (should only be the server in client mode)
         _client.SendToAll(data, DeliveryMethod.ReliableOrdered);
-        Console.WriteLine("SendLobbyJoin: Lobby join message sent");
+        Log.Write("SendLobbyJoin: Lobby join message sent");
     }
 
     /// <summary>
@@ -462,15 +463,15 @@ public class GameClient
         if (message.TryGetValue("Players", out var playersObj) && playersObj != null)
         {
             players = DeserializePlayers(playersObj);
-            Console.WriteLine($"HandlePlayersListUpdate: Received {players.Count} players");
+            Log.Write($"HandlePlayersListUpdate: Received {players.Count} players");
             foreach (var player in players)
             {
-                Console.WriteLine($"  - Player: {player.Name} (ID: {player.Id})");
+                Log.Write($"  - Player: {player.Name} (ID: {player.Id})");
             }
         }
         else
         {
-            Console.WriteLine("HandlePlayersListUpdate: No players found in message");
+            Log.Write("HandlePlayersListUpdate: No players found in message");
         }
 
         OnLobbyUpdateRaise(players, new List<GameInfo>());
@@ -487,24 +488,24 @@ public class GameClient
         if (message.TryGetValue("clients", out var clientsObj) && clientsObj != null)
         {
             clients = DeserializeConnectedClients(clientsObj);
-            Console.WriteLine($"HandleConnectedClientsUpdate: Received {clients.Count} connected clients");
+            Log.Write($"HandleConnectedClientsUpdate: Received {clients.Count} connected clients");
             foreach (var client in clients)
             {
-                Console.WriteLine($"  - Client: {client.PlayerName} (ID: {client.PlayerId}, ConnectionId: {client.ConnectionId})");
+                Log.Write($"  - Client: {client.PlayerName} (ID: {client.PlayerId}, ConnectionId: {client.ConnectionId})");
             }
         }
         else if (message.TryGetValue("Clients", out clientsObj) && clientsObj != null)
         {
             clients = DeserializeConnectedClients(clientsObj);
-            Console.WriteLine($"HandleConnectedClientsUpdate: Received {clients.Count} connected clients");
+            Log.Write($"HandleConnectedClientsUpdate: Received {clients.Count} connected clients");
             foreach (var client in clients)
             {
-                Console.WriteLine($"  - Client: {client.PlayerName} (ID: {client.PlayerId}, ConnectionId: {client.ConnectionId})");
+                Log.Write($"  - Client: {client.PlayerName} (ID: {client.PlayerId}, ConnectionId: {client.ConnectionId})");
             }
         }
         else
         {
-            Console.WriteLine("HandleConnectedClientsUpdate: No clients found in message");
+            Log.Write("HandleConnectedClientsUpdate: No clients found in message");
         }
         
         OnConnectedClientsUpdateRaise(clients);
@@ -776,7 +777,7 @@ public class GameClient
         {
             _client.Stop();
             _isConnected = false;
-            Console.WriteLine("Disconnected from server");
+            Log.Write("Disconnected from server");
         }
     }
 

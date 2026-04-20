@@ -1,3 +1,4 @@
+using GenericGame;
 using GenericGame.Client;
 
 class Program
@@ -21,11 +22,11 @@ class Program
             {
                 if (int.TryParse(args[++i], out serverPort))
                 {
-                    Console.WriteLine($"Server port: {serverPort}");
+                    Log.Write($"Server port: {serverPort}");
                 }
                 else
                 {
-                    Console.WriteLine("Invalid port number. Using default: 14000");
+                    Log.Write("Invalid port number. Using default: 14000");
                 }
             }
             else if (args[i] == "-n" || args[i] == "--name" && i + 1 < args.Length)
@@ -54,7 +55,7 @@ class Program
         client.Connect(serverAddress, serverPort, playerName, isObserver);
 
         // Wait for connection
-        Console.WriteLine("Press Enter to disconnect...");
+        Log.Write("Press Enter to disconnect...");
         Console.ReadLine();
 
         client.Disconnect();
@@ -62,14 +63,14 @@ class Program
 
     static void PrintHelp()
     {
-        Console.WriteLine("Generic Game Client");
-        Console.WriteLine("Usage: GenericGame.Client [options]");
-        Console.WriteLine();
-        Console.WriteLine("Options:");
-        Console.WriteLine("  -h, --host <address>  Server IP address or hostname (default: localhost)");
-        Console.WriteLine("  -p, --port <port>     Server port (default: 14000)");
-        Console.WriteLine("  -n, --name <name>     Player name (default: Player)");
-        Console.WriteLine("  -o, --observer        Connect as observer (spectator)");
-        Console.WriteLine("  -h, --help            Show this help message");
+        Log.Write("Generic Game Client");
+        Log.Write("Usage: GenericGame.Client [options]");
+        Log.Write("");
+        Log.Write("Options:");
+        Log.Write("  -h, --host <address>  Server IP address or hostname (default: localhost)");
+        Log.Write("  -p, --port <port>     Server port (default: 14000)");
+        Log.Write("  -n, --name <name>     Player name (default: Player)");
+        Log.Write("  -o, --observer        Connect as observer (spectator)");
+        Log.Write("  -h, --help            Show this help message");
     }
 }

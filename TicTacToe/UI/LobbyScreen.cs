@@ -1,6 +1,7 @@
 using GenericGame.Client;
 using GenericGame.Shared.Models;
 using GenericGame.Shared.Networking;
+using GenericGame;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -80,8 +81,8 @@ public class LobbyScreen : Microsoft.Xna.Framework.Game
 
     private void OnLobbyUpdate(object sender, LobbyUpdateEventArgs e)
     {
-        Console.WriteLine("OnLobbyUpdate(): enter");
-        Console.WriteLine($"OnLobbyUpdate: Received {e.Players.Count} players");
+        Log.Write("OnLobbyUpdate(): enter");
+        Log.Write($"OnLobbyUpdate: Received {e.Players.Count} players");
         _lobbyState.Players = e.Players;
         _lobbyState.Games = e.Games;
         _lobbyState.CurrentPlayerId = _client.CurrentPlayer?.Id ?? Guid.Empty;
@@ -89,20 +90,20 @@ public class LobbyScreen : Microsoft.Xna.Framework.Game
         // Debug: Print all players
         foreach (var player in _lobbyState.Players)
         {
-            Console.WriteLine($"  - Player: {player.Name} (ID: {player.Id})");
+            Log.Write($"  - Player: {player.Name} (ID: {player.Id})");
         }
     }
     
     private void OnConnectedClientsUpdate(object sender, ConnectedClientsUpdateEventArgs e)
     {
-        Console.WriteLine("OnConnectedClientsUpdate(): enter");
-        Console.WriteLine($"OnConnectedClientsUpdate: Received {e.Clients.Count} connected clients");
+        Log.Write("OnConnectedClientsUpdate(): enter");
+        Log.Write($"OnConnectedClientsUpdate: Received {e.Clients.Count} connected clients");
         _lobbyState.ConnectedClients = e.Clients;
         
         // Debug: Print all connected clients
         foreach (var client in _lobbyState.ConnectedClients)
         {
-            Console.WriteLine($"OnConnectedClientsUpdate(): Client: {client.PlayerName} (ID: {client.PlayerId})");
+            Log.Write($"OnConnectedClientsUpdate(): Client: {client.PlayerName} (ID: {client.PlayerId})");
         }
     }
     
@@ -125,7 +126,7 @@ public class LobbyScreen : Microsoft.Xna.Framework.Game
     private void ShowInvitationDialog(Guid gameId, string gameName, string inviterName)
     {
         // For now, just print to console
-        Console.WriteLine($"Invitation received: {inviterName} invited you to {gameName}");
+        Log.Write($"Invitation received: {inviterName} invited you to {gameName}");
     }
 
     // Button state tracking
@@ -196,7 +197,7 @@ public class LobbyScreen : Microsoft.Xna.Framework.Game
             var isMe = client.PlayerId == _lobbyState.CurrentPlayerId ? " (You)" : "";
             DrawText($"- {client.PlayerName} {client.ConnectionId} {client.PlayerId}", 50, yPos, Color.White, 14);
             yPos += 25;
-            //Console.WriteLine($"Draw(): {client.PlayerName}{isMe}");
+            //Log.Write($"Draw(): {client.PlayerName}{isMe}");
         }
 
         // Draw games section
