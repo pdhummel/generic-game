@@ -5,22 +5,54 @@ using GenericGame.Shared.Networking;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace GenericGame.Server;
 
 /// <summary>
-/// Dummy listener for NetManager
+/// Listener for NetManager that handles incoming messages
 /// </summary>
-public class DummyNetEventListener : INetEventListener
+public class ServerNetEventListener : INetEventListener
 {
+    private readonly GameServer _server;
+
+    public ServerNetEventListener(GameServer server)
+    {
+        _server = server;
+    }
+
     public void OnPeerConnected(NetPeer peer)
     {
-        // Do nothing
+        _server.AddConnection(peer.Id, peer);
+        
+        // Send welcome message to the newly connected client
+        var welcomeMessage = new ServerWelcomeMessage
+        {
+            ServerId = Guid.NewGuid(),
+            PlayerId = Guid.Empty,  // Will be assigned when client sends lobby join
+            ServerMessage = "Welcome to the server!"
+        };
+        _server.SendJsonToClient(peer.Id, welcomeMessage);
+        
+        // Broadcast updated connected clients list to all clients
+        var connectedClientsMessage = new ConnectedClientsMessage { Clients = _server.GetConnectedClients() };
+        var connectedClientsData = NetMessageSerializer.Serialize(connectedClientsMessage);
+        _server.Broadcast(connectedClientsData);
     }
 
     public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
     {
-        // Do nothing
+        _server.RemoveConnection(peer.Id);
+        
+        // Broadcast updated connected clients list
+        var connectedClientsMessage = new ConnectedClientsMessage { Clients = _server.GetConnectedClients() };
+        var connectedClientsData = NetMessageSerializer.Serialize(connectedClientsMessage);
+        _server.Broadcast(connectedClientsData);
+        
+        // Broadcast updated players list
+        var playersListMessage = new PlayersListMessage { Players = _server.GetConnectedPlayers() };
+        var playersListData = NetMessageSerializer.Serialize(playersListMessage);
+        _server.Broadcast(playersListData);
     }
 
     public void OnNetworkError(IPEndPoint endPoint, SocketError socketErrorCode)
@@ -30,17 +62,35 @@ public class DummyNetEventListener : INetEventListener
 
     public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod deliveryMethod)
     {
-        // Do nothing
+        try
+        {
+            var data = reader.GetRemainingBytes();
+            Console.WriteLine($"OnNetworkReceive: Received {data.Length} bytes from peer {peer.Id}");
+            _server.HandleMessage(peer.Id, data);
+        }
+        finally
+        {
+            reader.Recycle();
+        }
     }
 
     public void OnNetworkReceiveUnconnected(IPEndPoint endPoint, NetPacketReader reader, UnconnectedMessageType messageType)
     {
-        // Do nothing
+        try
+        {
+            var data = reader.GetRemainingBytes();
+            _server.HandleMessage(0, data);
+        }
+        finally
+        {
+            reader.Recycle();
+        }
     }
 
     public void OnConnectionRequest(ConnectionRequest request)
     {
-        // Do nothing
+        // Accept the connection
+        request.Accept();
     }
 
     public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
@@ -55,7 +105,7 @@ public class DummyNetEventListener : INetEventListener
 public class GameServer
 {
     private readonly NetManager _server;
-    private readonly DummyNetEventListener _listener;
+    private readonly ServerNetEventListener _listener;
     private readonly ConcurrentDictionary<long, PlayerConnection> _connections = new();
     private readonly Dictionary<Guid, Player> _players = new();
     private readonly Dictionary<Guid, GameInstance> _games = new();
@@ -73,7 +123,7 @@ public class GameServer
     public GameServer(int port = 14000)
     {
         Port = port;
-        _listener = new DummyNetEventListener();
+        _listener = new ServerNetEventListener(this);
         _server = new NetManager(_listener);
         _server.Start(port);
         Console.WriteLine($"Server started on port {port}");
@@ -89,6 +139,29 @@ public class GameServer
             _server.PollEvents();
             Thread.Sleep(10);
         }
+    }
+
+    /// <summary>
+    /// Adds a connection to the server
+    /// </summary>
+    public void AddConnection(long connectionId, NetPeer peer)
+    {
+        var conn = new PlayerConnection
+        {
+            Peer = peer,
+            PlayerId = Guid.Empty,
+            PlayerName = string.Empty,
+            IsObserver = false
+        };
+        _connections.TryAdd(connectionId, conn);
+    }
+
+    /// <summary>
+    /// Removes a connection from the server
+    /// </summary>
+    public bool RemoveConnection(long connectionId)
+    {
+        return _connections.TryRemove(connectionId, out _);
     }
 
     /// <summary>
@@ -193,6 +266,20 @@ public class GameServer
         return _connections.Values.FirstOrDefault(c => c.PlayerId == playerId);
     }
 
+    /// <summary>
+    /// Gets all connected clients (not necessarily players who have joined the lobby)
+    /// </summary>
+    public List<ConnectedClient> GetConnectedClients()
+    {
+        return _connections.Values.Select(c => new ConnectedClient
+        {
+            ConnectionId = c.Peer?.Id ?? 0,
+            PlayerId = c.PlayerId,
+            PlayerName = c.PlayerName,
+            IsObserver = c.IsObserver
+        }).ToList();
+    }
+    
     /// <summary>
     /// Gets all connected players
     /// </summary>
@@ -500,20 +587,30 @@ public class GameServer
         {
             conn.PlayerName = message.PlayerName;
             conn.IsObserver = message.IsObserver;
-            conn.PlayerId = Guid.NewGuid(); // Assign a new player ID
+            if (conn.PlayerId == Guid.Empty)
+            {
+                conn.PlayerId = Guid.NewGuid(); // Assign a new player ID if not already assigned
+            }
+            Console.WriteLine($"HandleLobbyJoin: Player joined - {conn.PlayerName} (ID: {conn.PlayerId})");
         }
 
+        // Broadcast updated connected clients list
+        var connectedClientsMessage = new ConnectedClientsMessage { Clients = GetConnectedClients() };
+        var connectedClientsData = NetMessageSerializer.Serialize(connectedClientsMessage);
+        Broadcast(connectedClientsData);
+        
         // Broadcast updated players list
         var playersListMessage = new PlayersListMessage { Players = GetConnectedPlayers() };
         var playersListData = NetMessageSerializer.Serialize(playersListMessage);
+        Console.WriteLine($"HandleLobbyJoin: Broadcasting players list with {playersListMessage.Players.Count} players");
         Broadcast(playersListData);
-
+        
         // Broadcast updated games list
         var gamesListMessage = new GamesListMessage { Games = GetGamesInfo() };
         var gamesListData = NetMessageSerializer.Serialize(gamesListMessage);
         Broadcast(gamesListData);
     }
-
+    
     /// <summary>
     /// Handles a lobby leave message
     /// </summary>
@@ -521,15 +618,20 @@ public class GameServer
     {
         var message = NetMessageSerializer.Deserialize<LobbyLeaveMessage>(data);
         if (message == null) return;
-
+        
         // Remove connection
         _connections.TryRemove(connectionId, out _);
-
+        
+        // Broadcast updated connected clients list
+        var connectedClientsMessage = new ConnectedClientsMessage { Clients = GetConnectedClients() };
+        var connectedClientsData = NetMessageSerializer.Serialize(connectedClientsMessage);
+        Broadcast(connectedClientsData);
+        
         // Broadcast updated players list
         var playersListMessage = new PlayersListMessage { Players = GetConnectedPlayers() };
         var playersListData = NetMessageSerializer.Serialize(playersListMessage);
         Broadcast(playersListData);
-
+        
         // Broadcast updated games list
         var gamesListMessage = new GamesListMessage { Games = GetGamesInfo() };
         var gamesListData = NetMessageSerializer.Serialize(gamesListMessage);

@@ -7,6 +7,7 @@ namespace GenericGame.Shared.Networking;
 /// </summary>
 public class ConnectRequestMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.ConnectRequest;
     public string ClientName { get; set; } = string.Empty;
     public bool IsObserver { get; set; }
 }
@@ -16,6 +17,7 @@ public class ConnectRequestMessage
 /// </summary>
 public class DisconnectRequestMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.DisconnectRequest;
     public Guid PlayerId { get; set; }
 }
 
@@ -24,6 +26,7 @@ public class DisconnectRequestMessage
 /// </summary>
 public class PlayerActionMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.PlayerAction;
     public Guid PlayerId { get; set; }
     public GenericGame.Shared.Models.Action Action { get; set; } = new PlayerAction();
 }
@@ -33,6 +36,7 @@ public class PlayerActionMessage
 /// </summary>
 public class LobbyJoinMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.LobbyJoin;
     public string PlayerName { get; set; } = string.Empty;
     public bool IsObserver { get; set; }
 }
@@ -42,6 +46,7 @@ public class LobbyJoinMessage
 /// </summary>
 public class LobbyLeaveMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.LobbyLeave;
     public Guid PlayerId { get; set; }
 }
 
@@ -50,6 +55,7 @@ public class LobbyLeaveMessage
 /// </summary>
 public class ServerWelcomeMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.ServerWelcome;
     public Guid ServerId { get; set; }
     public Guid PlayerId { get; set; }
     public string ServerMessage { get; set; } = string.Empty;
@@ -60,6 +66,7 @@ public class ServerWelcomeMessage
 /// </summary>
 public class GameUpdateMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.GameUpdate;
     public GameState GameState { get; set; } = new GameState();
 }
 
@@ -68,6 +75,7 @@ public class GameUpdateMessage
 /// </summary>
 public class EventNotificationMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.EventNotification;
     public Event Event { get; set; } = new GameEvent();
 }
 
@@ -76,6 +84,7 @@ public class EventNotificationMessage
 /// </summary>
 public class PlayerJoinedMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.PlayerJoined;
     public Player Player { get; set; } = new Player();
 }
 
@@ -84,6 +93,7 @@ public class PlayerJoinedMessage
 /// </summary>
 public class PlayerLeftMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.PlayerLeft;
     public Guid PlayerId { get; set; }
     public string PlayerName { get; set; } = string.Empty;
 }
@@ -93,6 +103,7 @@ public class PlayerLeftMessage
 /// </summary>
 public class GameStartedMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.GameStarted;
     public Guid GameId { get; set; }
     public GameState GameState { get; set; } = new GameState();
 }
@@ -102,6 +113,7 @@ public class GameStartedMessage
 /// </summary>
 public class GameEndedMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.GameEnded;
     public Guid GameId { get; set; }
     public GameState GameState { get; set; } = new GameState();
 }
@@ -133,6 +145,7 @@ public class GameEvent : GenericGame.Shared.Models.Event
 /// </summary>
 public class CreateGameMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.CreateGame;
     public string GameName { get; set; } = string.Empty;
     public Guid CreatorId { get; set; }
     public List<Guid> InvitedPlayerIds { get; set; } = new List<Guid>();
@@ -145,6 +158,7 @@ public class CreateGameMessage
 /// </summary>
 public class InvitePlayerMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.InvitePlayer;
     public Guid GameId { get; set; }
     public Guid InviterId { get; set; }
     public Guid InviteeId { get; set; }
@@ -155,6 +169,7 @@ public class InvitePlayerMessage
 /// </summary>
 public class JoinGameMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.JoinGame;
     public Guid GameId { get; set; }
     public Guid PlayerId { get; set; }
     public string PlayerName { get; set; } = string.Empty;
@@ -165,6 +180,7 @@ public class JoinGameMessage
 /// </summary>
 public class LeaveGameMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.LeaveGame;
     public Guid GameId { get; set; }
     public Guid PlayerId { get; set; }
 }
@@ -174,6 +190,7 @@ public class LeaveGameMessage
 /// </summary>
 public class GamesListMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.GamesListUpdate;
     public List<GameInfo> Games { get; set; } = new List<GameInfo>();
 }
 
@@ -197,6 +214,7 @@ public class GameInfo
 /// </summary>
 public class GameInvitationMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.GameInvitation;
     public Guid GameId { get; set; }
     public string GameName { get; set; } = string.Empty;
     public Guid InviterId { get; set; }
@@ -208,6 +226,7 @@ public class GameInvitationMessage
 /// </summary>
 public class InvitationAcceptedMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.JoinGame;
     public Guid GameId { get; set; }
     public Guid PlayerId { get; set; }
     public string PlayerName { get; set; } = string.Empty;
@@ -218,6 +237,7 @@ public class InvitationAcceptedMessage
 /// </summary>
 public class GameReadyToStartMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.GameStarted;
     public Guid GameId { get; set; }
     public GameState GameState { get; set; } = new GameState();
 }
@@ -227,7 +247,28 @@ public class GameReadyToStartMessage
 /// </summary>
 public class PlayersListMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.PlayersListUpdate;
     public List<Player> Players { get; set; } = new List<Player>();
+}
+
+/// <summary>
+/// Message containing the list of connected clients (not necessarily players)
+/// </summary>
+public class ConnectedClientsMessage
+{
+    public byte MessageType { get; set; } = NetMessageType.ConnectedClientsUpdate;
+    public List<ConnectedClient> Clients { get; set; } = new List<ConnectedClient>();
+}
+
+/// <summary>
+/// Represents a connected client (may or may not be a player)
+/// </summary>
+public class ConnectedClient
+{
+    public long ConnectionId { get; set; }
+    public Guid PlayerId { get; set; }
+    public string PlayerName { get; set; } = string.Empty;
+    public bool IsObserver { get; set; }
 }
 
 /// <summary>
@@ -235,6 +276,7 @@ public class PlayersListMessage
 /// </summary>
 public class CreateGameResponseMessage
 {
+    public byte MessageType { get; set; } = NetMessageType.CreateGameResponse;
     public bool Success { get; set; }
     public Guid GameId { get; set; }
     public GameState GameState { get; set; } = new GameState();

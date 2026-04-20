@@ -29,7 +29,8 @@ public static class NetMessageType
     public const byte GameInvitation = 19;
     public const byte PlayerInvited = 20;
     public const byte PlayersListUpdate = 21;
-    public const byte CreateGameResponse = 22;
+    public const byte ConnectedClientsUpdate = 22;
+    public const byte CreateGameResponse = 23;
     public const byte JoinGameResponse = 23;
     public const byte LeaveGameResponse = 24;
     public const byte LobbyJoinResponse = 25;

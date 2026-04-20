@@ -104,6 +104,9 @@ public class TicTacToeForm : Microsoft.Xna.Framework.Game
 
     protected override void Update(GameTime gameTime)
     {
+        // Poll for network events from the server
+        _client.Update();
+
         var keyboardState = Keyboard.GetState();
         var mouseState = Mouse.GetState();
 

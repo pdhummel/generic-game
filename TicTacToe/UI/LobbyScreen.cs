@@ -9,7 +9,7 @@ using TicTacToe.Models;
 namespace TicTacToe.UI;
 
 /// <summary>
-/// Lobby screen that shows connected players and available games
+/// Lobby screen that shows connected clients and available games
 /// </summary>
 public class LobbyScreen : Microsoft.Xna.Framework.Game
 {
@@ -38,16 +38,17 @@ public class LobbyScreen : Microsoft.Xna.Framework.Game
 
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-    }
 
-    protected override void Initialize()
-    {
-        // Register event handlers
+        // Register event handlers in constructor so they're registered before any messages are received
         _client.OnGameStateUpdated += OnGameStateUpdated;
         _client.OnLobbyUpdate += OnLobbyUpdate;
         _client.OnGamesListUpdate += OnGamesListUpdate;
         _client.OnGameInvitationReceived += OnGameInvitationReceived;
+        _client.OnConnectedClientsUpdate += OnConnectedClientsUpdate;
+    }
 
+    protected override void Initialize()
+    {
         base.Initialize();
     }
 
@@ -79,11 +80,32 @@ public class LobbyScreen : Microsoft.Xna.Framework.Game
 
     private void OnLobbyUpdate(object sender, LobbyUpdateEventArgs e)
     {
+        Console.WriteLine("OnLobbyUpdate(): enter");
+        Console.WriteLine($"OnLobbyUpdate: Received {e.Players.Count} players");
         _lobbyState.Players = e.Players;
         _lobbyState.Games = e.Games;
         _lobbyState.CurrentPlayerId = _client.CurrentPlayer?.Id ?? Guid.Empty;
+        
+        // Debug: Print all players
+        foreach (var player in _lobbyState.Players)
+        {
+            Console.WriteLine($"  - Player: {player.Name} (ID: {player.Id})");
+        }
     }
-
+    
+    private void OnConnectedClientsUpdate(object sender, ConnectedClientsUpdateEventArgs e)
+    {
+        Console.WriteLine("OnConnectedClientsUpdate(): enter");
+        Console.WriteLine($"OnConnectedClientsUpdate: Received {e.Clients.Count} connected clients");
+        _lobbyState.ConnectedClients = e.Clients;
+        
+        // Debug: Print all connected clients
+        foreach (var client in _lobbyState.ConnectedClients)
+        {
+            Console.WriteLine($"OnConnectedClientsUpdate(): Client: {client.PlayerName} (ID: {client.PlayerId})");
+        }
+    }
+    
     private void OnGamesListUpdate(object sender, GamesListUpdateEventArgs e)
     {
         _lobbyState.Games = e.Games;
@@ -112,6 +134,9 @@ public class LobbyScreen : Microsoft.Xna.Framework.Game
 
     protected override void Update(GameTime gameTime)
     {
+        // Poll for network events from the server
+        _client.Update();
+
         var keyboardState = Keyboard.GetState();
         var mouseState = Mouse.GetState();
 
@@ -163,14 +188,15 @@ public class LobbyScreen : Microsoft.Xna.Framework.Game
         // Draw title
         DrawText("Tic-Tac-Toe Lobby", 50, 50, Color.White, 24);
 
-        // Draw players section
-        DrawText("Connected Players:", 50, 100, Color.LightGray, 16);
+        // Draw connected clients section
+        DrawText("Connected Clients:", 50, 100, Color.LightGray, 16);
         var yPos = 130f;
-        foreach (var player in _lobbyState.Players)
+        foreach (var client in _lobbyState.ConnectedClients)
         {
-            var isMe = player.Id == _lobbyState.CurrentPlayerId ? " (You)" : "";
-            DrawText($"- {player.Name}{isMe}", 50, yPos, Color.White, 14);
+            var isMe = client.PlayerId == _lobbyState.CurrentPlayerId ? " (You)" : "";
+            DrawText($"- {client.PlayerName}{isMe}", 50, yPos, Color.White, 14);
             yPos += 25;
+            //Console.WriteLine($"Draw(): {client.PlayerName}{isMe}");
         }
 
         // Draw games section

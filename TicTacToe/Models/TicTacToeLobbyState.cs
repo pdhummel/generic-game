@@ -9,20 +9,26 @@ namespace TicTacToe.Models;
 public class TicTacToeLobbyState
 {
     /// <summary>
-    /// List of connected players in the lobby
+    /// List of connected clients (not necessarily players who have joined the lobby)
+    /// All clients connected to the server are included, regardless of whether they have joined the lobby.
+    /// </summary>
+    public List<ConnectedClient> ConnectedClients { get; set; } = new List<ConnectedClient>();
+    
+    /// <summary>
+    /// List of players who have joined the lobby (subset of ConnectedClients)
     /// </summary>
     public List<Player> Players { get; set; } = new List<Player>();
-
+    
     /// <summary>
     /// List of available games
     /// </summary>
     public List<GameInfo> Games { get; set; } = new List<GameInfo>();
-
+    
     /// <summary>
     /// The current player's ID
     /// </summary>
     public Guid CurrentPlayerId { get; set; }
-
+    
     /// <summary>
     /// Creates a deep copy of this lobby state
     /// </summary>
@@ -30,6 +36,7 @@ public class TicTacToeLobbyState
     {
         return new TicTacToeLobbyState
         {
+            ConnectedClients = new List<ConnectedClient>(ConnectedClients),
             Players = new List<Player>(Players),
             Games = new List<GameInfo>(Games),
             CurrentPlayerId = CurrentPlayerId

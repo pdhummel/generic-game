@@ -94,12 +94,19 @@ class Program
     {
         Console.WriteLine($"Starting client in stand-alone mode...");
         var client = new GameClient();
+        var lobby = new LobbyScreen(client);
 
         // Connect to server
         client.Connect(address, port, playerName, isObserver);
 
+        // Poll for connection events
+        for (int i = 0; i < 50; i++)
+        {
+            client.Update();
+            Thread.Sleep(10);
+        }
+
         // Show lobby screen first
-        var lobby = new LobbyScreen(client);
         lobby.Run();
 
         client.Disconnect();
@@ -120,12 +127,21 @@ class Program
         // Give server time to start
         Thread.Sleep(1000);
 
-        // Create and connect client
+        // Create client and lobby screen
         var client = new GameClient();
+        var lobby = new LobbyScreen(client);
+
+        // Connect to server
         client.Connect("localhost", port, playerName, false);
 
-        // Show lobby screen first
-        var lobby = new LobbyScreen(client);
+        // Poll for connection events
+        for (int i = 0; i < 50; i++)
+        {
+            client.Update();
+            Thread.Sleep(10);
+        }
+
+        // Show lobby screen
         lobby.Run();
 
         client.Disconnect();
