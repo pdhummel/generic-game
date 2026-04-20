@@ -532,13 +532,13 @@ public class GameClient
         // Handle Dictionary<string, object> (from manual deserialization)
         else if (clientObj is Dictionary<string, object> clientDict)
         {
-            if (clientDict.TryGetValue("ConnectionId", out var connectionIdObj) && connectionIdObj != null)
+            if (clientDict.TryGetValue("connectionId", out var connectionIdObj) && connectionIdObj != null)
                 client.ConnectionId = Convert.ToInt64(connectionIdObj);
-            if (clientDict.TryGetValue("PlayerId", out var playerIdObj) && playerIdObj != null)
+            if (clientDict.TryGetValue("playerId", out var playerIdObj) && playerIdObj != null)
                 client.PlayerId = Guid.Parse(playerIdObj.ToString());
-            if (clientDict.TryGetValue("PlayerName", out var playerNameObj) && playerNameObj != null)
+            if (clientDict.TryGetValue("playerName", out var playerNameObj) && playerNameObj != null)
                 client.PlayerName = playerNameObj.ToString() ?? string.Empty;
-            if (clientDict.TryGetValue("IsObserver", out var isObserverObj) && isObserverObj != null)
+            if (clientDict.TryGetValue("isObserver", out var isObserverObj) && isObserverObj != null)
                 client.IsObserver = Convert.ToBoolean(isObserverObj);
         }
         

@@ -194,7 +194,7 @@ public class LobbyScreen : Microsoft.Xna.Framework.Game
         foreach (var client in _lobbyState.ConnectedClients)
         {
             var isMe = client.PlayerId == _lobbyState.CurrentPlayerId ? " (You)" : "";
-            DrawText($"- {client.PlayerName}{isMe}", 50, yPos, Color.White, 14);
+            DrawText($"- {client.PlayerName} {client.ConnectionId} {client.PlayerId}", 50, yPos, Color.White, 14);
             yPos += 25;
             //Console.WriteLine($"Draw(): {client.PlayerName}{isMe}");
         }

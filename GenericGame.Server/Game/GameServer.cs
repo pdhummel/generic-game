@@ -38,6 +38,8 @@ public class ServerNetEventListener : INetEventListener
         var connectedClientsMessage = new ConnectedClientsMessage { Clients = _server.GetConnectedClients() };
         var connectedClientsData = NetMessageSerializer.Serialize(connectedClientsMessage);
         _server.Broadcast(connectedClientsData);
+        // Note: Connected clients list is broadcast after lobby join (in HandleLobbyJoin)
+        // because the player name is not yet known at this point
     }
 
     public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
@@ -403,14 +405,21 @@ public class GameServer
     /// </summary>
     public void HandleMessage(long connectionId, byte[] data)
     {
+        Console.WriteLine("HandleMessage(): enter");
         try
         {
             var message = NetMessageSerializer.Deserialize<Dictionary<string, object>>(data);
             if (message == null) return;
 
-            if (message.TryGetValue("MessageType", out var typeObj) && typeObj != null)
+            if (message.TryGetValue("messageType", out var typeObj) && typeObj != null)
             {
-                var messageType = Convert.ToByte(typeObj);
+                var messageType = typeObj switch
+                {
+                    byte b => b,
+                    int i => (byte)i,
+                    JsonElement elem => elem.GetByte(),
+                    _ => Convert.ToByte(typeObj.ToString())
+                };
 
                 switch (messageType)
                 {
